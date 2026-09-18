@@ -193,7 +193,7 @@ test("Provider: gemini-web has correct models", async () => {
 //
 // Hard rule #12: the body carries no raw err.message stack trace.
 
-test("#2832/#3516: missing Playwright browser returns an actionable 503 with cooldown hint, not a retryable 500", async () => {
+test("#14086/#2832/#3516: missing Playwright browser returns the install command with a cooldown hint", async () => {
   const playwrightError = new Error(
     "browserType.launch: Executable doesn't exist at /home/node/.cache/ms-playwright/chromium_headless_shell-1161/chrome-linux/headless_shell\n" +
       "    at /app/node_modules/playwright-core/lib/server/browserType.js:123:19"
@@ -226,7 +226,16 @@ test("#2832/#3516: missing Playwright browser returns an actionable 503 with coo
     );
     const json = (await result.response.json()) as any;
     assert.ok(typeof json.error === "string", "error field must be a string");
-    assert.match(json.error, /playwright install|not installed/i, "message must be actionable");
+    assert.match(
+      json.error,
+      /Gemini Web requires the Playwright Chromium browser, which is not installed/i,
+      "message must identify the missing runtime"
+    );
+    assert.match(
+      json.error,
+      /Run `npx playwright install chromium` on the host/,
+      "message must include the exact installation command from #14086"
+    );
     // No raw stack trace / source path leaks into the body.
     assert.ok(!json.error.includes("\n    at "), "must not contain multi-line stack trace");
     assert.ok(
